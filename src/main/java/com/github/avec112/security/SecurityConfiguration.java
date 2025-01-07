@@ -7,17 +7,22 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import javax.sql.DataSource;
 
 @EnableWebSecurity
 @Configuration
 public class SecurityConfiguration extends VaadinWebSecurity {
 
 
-
+    private final DataSource dataSource;
     private final UserDetailsServiceImpl userDetailsService; // Inject UserDetailsServiceImpl
 
-    public SecurityConfiguration(UserDetailsServiceImpl userDetailsService) {
+    public SecurityConfiguration(DataSource dataSource, UserDetailsServiceImpl userDetailsService) {
+        this.dataSource = dataSource;
         this.userDetailsService = userDetailsService; // Constructor injection
     }
 
@@ -41,10 +46,22 @@ public class SecurityConfiguration extends VaadinWebSecurity {
                 .key("yourUniqueRememberMeKey") // Security key for encrypting remember-me cookie
                 .alwaysRemember(true) // Automatically enable remember-me for all logins by default
                 .tokenValiditySeconds(3600*24*30) // 30 days
-                .userDetailsService(userDetailsService)); // Use your custom UserDetailsService for authentication
+                .userDetailsService(userDetailsService) // Use your custom UserDetailsService for authentication
+                .tokenRepository(persistentTokenRepository())); // Use the persistent token store
 
         super.configure(http);
         setLoginView(http, "/login");
+    }
+
+    @Bean
+    public PersistentTokenRepository persistentTokenRepository() {
+        JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
+        tokenRepository.setDataSource(dataSource);
+
+        // Uncomment this below if the table `persistent_logins` does not exist yet
+//        tokenRepository.setCreateTableOnStartup(true);
+
+        return tokenRepository;
     }
 
 }
