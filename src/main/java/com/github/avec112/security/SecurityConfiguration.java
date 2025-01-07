@@ -13,6 +13,14 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @Configuration
 public class SecurityConfiguration extends VaadinWebSecurity {
 
+
+
+    private final UserDetailsServiceImpl userDetailsService; // Inject UserDetailsServiceImpl
+
+    public SecurityConfiguration(UserDetailsServiceImpl userDetailsService) {
+        this.userDetailsService = userDetailsService; // Constructor injection
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -27,6 +35,13 @@ public class SecurityConfiguration extends VaadinWebSecurity {
         // Icons from the line-awesome addon
         http.authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(new AntPathRequestMatcher("/line-awesome/**/*.svg")).permitAll());
+
+        // Add stateless remember-me functionality
+        http.rememberMe(remember -> remember
+                .key("yourUniqueRememberMeKey") // Security key for encrypting remember-me cookie
+                .alwaysRemember(true) // Automatically enable remember-me for all logins by default
+                .tokenValiditySeconds(3600*24*30) // 30 days
+                .userDetailsService(userDetailsService)); // Use your custom UserDetailsService for authentication
 
         super.configure(http);
         setLoginView(http, "/login");
