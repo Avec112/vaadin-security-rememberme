@@ -53,14 +53,11 @@ public class SecurityConfiguration extends VaadinWebSecurity {
         setLoginView(http, "/login");
     }
 
+    // Table created with schema.sql
     @Bean
     public PersistentTokenRepository persistentTokenRepository() {
         JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
         tokenRepository.setDataSource(dataSource);
-
-        // Uncomment this below if the table `persistent_logins` does not exist yet
-//        tokenRepository.setCreateTableOnStartup(true);
-
         return tokenRepository;
     }
 
